@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed CodeFull logical data model</title>
+  <desc id="desc">Workspace and user records relate to courses, lessons, progress, coding runs, challenge entries and submissions, points ledger, and public privacy settings.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2878c8"/></marker>
+    <style>
+      .bg{fill:#f4f8fd}.box{fill:#fff;stroke:#9cc8f4;stroke-width:2;rx:12}
+      .root{fill:#e9f4ff;stroke:#1674c7;stroke-width:2;rx:12}
+      .title{font:700 24px Arial,sans-serif;fill:#12345a}.h{font:700 15px Arial,sans-serif;fill:#12345a}
+      .t{font:12px Arial,sans-serif;fill:#35516f}.small{font:12px Arial,sans-serif;fill:#536b84}
+      .line{stroke:#2878c8;stroke-width:2;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="620"/>
+  <text class="title" x="40" y="45">CodeFull | Proposed logical data model</text>
+  <text class="small" x="40" y="68">Conceptual relationships only — not a deployed schema; tenant and privacy policies apply across domains.</text>
+  <rect class="root" x="480" y="95" width="230" height="76"/><text class="h" x="505" y="126">tenants / users</text><text class="t" x="505" y="151">identity · membership · privacy</text>
+  <rect class="box" x="55" y="245" width="220" height="95"/><text class="h" x="78" y="278">courses / lessons</text><text class="t" x="78" y="307">ordered learning content</text>
+  <rect class="box" x="335" y="245" width="220" height="95"/><text class="h" x="358" y="278">progress / XP</text><text class="t" x="358" y="307">verified events · streaks</text>
+  <rect class="box" x="615" y="245" width="220" height="95"/><text class="h" x="638" y="278">runs / snippets</text><text class="t" x="638" y="307">execution records · references</text>
+  <rect class="box" x="895" y="245" width="250" height="95"/><text class="h" x="918" y="278">challenges / submissions</text><text class="t" x="918" y="307">entries · results · scores</text>
+  <rect class="box" x="195" y="430" width="250" height="95"/><text class="h" x="218" y="463">points ledger</text><text class="t" x="218" y="492">accounts · transactions · entries</text>
+  <rect class="box" x="505" y="430" width="250" height="95"/><text class="h" x="528" y="463">community</text><text class="t" x="528" y="492">questions · answers · reputation</text>
+  <rect class="box" x="815" y="430" width="250" height="95"/><text class="h" x="838" y="463">audit / events</text><text class="t" x="838" y="492">outbox · idempotency · audit</text>
+  <path class="line" d="M535 171 C435 198 180 198 165 245"/>
+  <path class="line" d="M560 171 C505 200 445 208 445 245"/>
+  <path class="line" d="M620 171 C665 202 725 208 725 245"/>
+  <path class="line" d="M660 171 C820 198 1015 205 1015 245"/>
+  <path class="line" d="M445 340 C420 380 345 393 320 430"/>
+  <path class="line" d="M725 340 C690 390 650 405 630 430"/>
+  <path class="line" d="M1015 340 C1010 375 960 400 940 430"/>
+  <text class="small" x="40" y="578">Derived balances are not the ledger. Public projections must honor consent and anonymity; cross-tenant access is explicitly restricted.</text>
+</svg>

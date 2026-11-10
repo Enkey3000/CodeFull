@@ -1,0 +1,629 @@
+asyncapi: 3.0.0
+info:
+  title: CodeFull Realtime and Streaming API
+  version: 0.1.0
+  description: 'Companion to openapi.yaml. Describes WebSocket channels (live battles and notifications) and server-sent event streams (run output
+    and AI tutor). Derived from SRS-001 and SEC-001. Battles are fast-follow (FF). Closes GAP-019.
+
+
+    Protocol rules: every server message uses the Envelope with a per-channel sequence number; clients resume from the last sequence after a reconnect.
+    The server clock is authoritative and client clocks and scores are ignored (SEC-069). Message size limit 16 KB; client message rate limit
+    5 per second per connection; queues are bounded with backpressure (SEC-070).'
+  license:
+    name: Proprietary
+servers:
+  realtime:
+    host: rt.codefull.dev
+    protocol: wss
+    description: WebSocket hub (Go). Authenticated at connect and on resume; origin allowlist enforced (SEC-068).
+    security:
+    - type: httpApiKey
+      name: access_token
+      in: query
+  api:
+    host: api.codefull.dev
+    pathname: /v1
+    protocol: https
+    description: 'Server-sent event streams over HTTPS using Authorization: Bearer tokens (OIDC).'
+channels:
+  battle:
+    address: /battles/{battleId}
+    servers:
+    - $ref: '#/servers/realtime'
+    description: Live battle room. Scoreboard, state, and clock events from the server; subscribe and clock requests from the client. Spectators
+      receive the same server events read-only. Submissions are made over REST (createSubmission operations in openapi.yaml), never over this
+      channel.
+    parameters:
+      battleId:
+        description: Battle identifier (UUID)
+    messages:
+      scoreboardUpdated:
+        $ref: '#/components/messages/scoreboardUpdated'
+      battleStateChanged:
+        $ref: '#/components/messages/battleStateChanged'
+      clockSync:
+        $ref: '#/components/messages/clockSync'
+      ownVerdict:
+        $ref: '#/components/messages/ownVerdict'
+      battleSubscribe:
+        $ref: '#/components/messages/battleSubscribe'
+      clockRequest:
+        $ref: '#/components/messages/clockRequest'
+    x-requirement:
+    - FR-CMP-008
+    - FR-CMP-009
+    - FR-CMP-010
+    - SEC-068
+    - SEC-069
+    - SEC-070
+  notifications:
+    address: /notifications/stream
+    servers:
+    - $ref: '#/servers/realtime'
+    description: Per-user notification stream.
+    messages:
+      notificationCreated:
+        $ref: '#/components/messages/notificationCreated'
+      notificationsRead:
+        $ref: '#/components/messages/notificationsRead'
+      notifSubscribe:
+        $ref: '#/components/messages/notifSubscribe'
+    x-requirement:
+    - FR-PLT-001
+    - NFR-010
+    - SEC-068
+  runStream:
+    address: /runs/{runId}/stream
+    servers:
+    - $ref: '#/servers/api'
+    description: Server-sent events for a run (operation streamRun in openapi.yaml). Content type text/event-stream; each event data is the JSON
+      payload.
+    parameters:
+      runId:
+        description: Run identifier (UUID)
+    messages:
+      runOutput:
+        $ref: '#/components/messages/runOutput'
+      runDone:
+        $ref: '#/components/messages/runDone'
+      streamError:
+        $ref: '#/components/messages/streamError'
+    x-requirement:
+    - FR-EXE-001
+    - NFR-003
+  aiStream:
+    address: /ai/sessions/{sessionId}/messages
+    servers:
+    - $ref: '#/servers/api'
+    description: Server-sent events for a tutor reply (operation sendAiMessage in openapi.yaml). Output is text only and never executed automatically.
+    parameters:
+      sessionId:
+        description: Tutor session identifier (UUID)
+    messages:
+      aiToken:
+        $ref: '#/components/messages/aiToken'
+      aiDone:
+        $ref: '#/components/messages/aiDone'
+      streamError:
+        $ref: '#/components/messages/streamError'
+    x-requirement:
+    - FR-AI-001
+    - FR-AI-003
+    - SEC-062
+    - SEC-064
+operations:
+  receiveBattleEvents:
+    action: send
+    channel:
+      $ref: '#/channels/battle'
+    summary: Server sends scoreboard, state, clock, and own-verdict events
+    messages:
+    - $ref: '#/channels/battle/messages/scoreboardUpdated'
+    - $ref: '#/channels/battle/messages/battleStateChanged'
+    - $ref: '#/channels/battle/messages/clockSync'
+    - $ref: '#/channels/battle/messages/ownVerdict'
+    x-requirement:
+    - FR-CMP-009
+    - FR-CMP-010
+  sendBattleControl:
+    action: receive
+    channel:
+      $ref: '#/channels/battle'
+    summary: Server receives subscribe and clock requests; ignores any score or timestamp claims
+    messages:
+    - $ref: '#/channels/battle/messages/battleSubscribe'
+    - $ref: '#/channels/battle/messages/clockRequest'
+    x-requirement:
+    - SEC-068
+    - SEC-069
+  receiveNotifications:
+    action: send
+    channel:
+      $ref: '#/channels/notifications'
+    summary: Server pushes notifications
+    messages:
+    - $ref: '#/channels/notifications/messages/notificationCreated'
+    x-requirement:
+    - FR-PLT-001
+  sendNotificationControl:
+    action: receive
+    channel:
+      $ref: '#/channels/notifications'
+    summary: Server receives subscribe and read acknowledgments
+    messages:
+    - $ref: '#/channels/notifications/messages/notifSubscribe'
+    - $ref: '#/channels/notifications/messages/notificationsRead'
+    x-requirement:
+    - FR-PLT-001
+    - SEC-068
+  streamRunOutput:
+    action: send
+    channel:
+      $ref: '#/channels/runStream'
+    summary: Server streams run output
+    messages:
+    - $ref: '#/channels/runStream/messages/runOutput'
+    - $ref: '#/channels/runStream/messages/runDone'
+    - $ref: '#/channels/runStream/messages/streamError'
+    x-requirement:
+    - FR-EXE-001
+  streamAiReply:
+    action: send
+    channel:
+      $ref: '#/channels/aiStream'
+    summary: Server streams tutor reply tokens
+    messages:
+    - $ref: '#/channels/aiStream/messages/aiToken'
+    - $ref: '#/channels/aiStream/messages/aiDone'
+    - $ref: '#/channels/aiStream/messages/streamError'
+    x-requirement:
+    - FR-AI-001
+    - FR-AI-003
+components:
+  schemas:
+    Envelope:
+      type: object
+      properties:
+        seq:
+          type: integer
+          minimum: 0
+          description: Per-channel monotonically increasing sequence number; clients resume from the last seq they processed
+        type:
+          type: string
+          description: Message type
+        server_time:
+          type: string
+          format: date-time
+          description: Authoritative server time at send
+        payload:
+          type: object
+      additionalProperties: false
+      required:
+      - seq
+      - type
+      - server_time
+      - payload
+    Participant:
+      type: object
+      properties:
+        rank:
+          type: integer
+        display_name:
+          type: string
+          description: The string Anonymous for private entrants
+        anonymous:
+          type: boolean
+        tier:
+          type: string
+          enum:
+          - beginner
+          - intermediate
+          - advanced
+          - expert
+          - master
+          - guru
+        score:
+          type: integer
+        passed_cases:
+          type: integer
+        status:
+          type: string
+          enum:
+          - solving
+          - submitted
+          - passed
+          - failed
+      additionalProperties: false
+      required:
+      - rank
+      - display_name
+      - anonymous
+      - score
+      description: Never contains a user id or any identity field for private entrants (SEC-017, TM-CMP-004)
+    ScoreboardUpdate:
+      type: object
+      properties:
+        standings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Participant'
+        entrants:
+          type: integer
+        spectators:
+          type: integer
+      additionalProperties: false
+      required:
+      - standings
+    BattleState:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+          - scheduled
+          - lobby_open
+          - live
+          - closing
+          - settled
+          - cancelled
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        reason:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - state
+    ClockSync:
+      type: object
+      properties:
+        server_time:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        remaining_ms:
+          type: integer
+      additionalProperties: false
+      required:
+      - server_time
+      - ends_at
+      - remaining_ms
+    OwnVerdict:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        verdict:
+          type: string
+          enum:
+          - passed
+          - failed
+          - partial
+        passed_cases:
+          type: integer
+        total_cases:
+          type: integer
+      additionalProperties: false
+      required:
+      - submission_id
+      - verdict
+      description: Sent only to the submitting user; pass counts only, never hidden test inputs or outputs (TM-CMP-007)
+    Subscribe:
+      type: object
+      properties:
+        last_seq:
+          type: integer
+          minimum: 0
+          description: Resume point; omit on first connect
+        access_token:
+          type: string
+          description: Short-lived token; verified at connect and on resume (SEC-068)
+      additionalProperties: false
+      required:
+      - access_token
+    ClockRequest:
+      type: object
+      properties:
+        client_time:
+          type: string
+          format: date-time
+      additionalProperties: false
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - category
+      - title
+    NotificationsRead:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        all:
+          type: boolean
+      additionalProperties: false
+    RunOutput:
+      type: object
+      properties:
+        stream:
+          type: string
+          enum:
+          - stdout
+          - stderr
+        chunk:
+          type: string
+      additionalProperties: false
+      required:
+      - stream
+      - chunk
+    RunDone:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - completed
+          - error
+          - timeout
+        duration_ms:
+          type: integer
+        memory_kb:
+          type: integer
+      additionalProperties: false
+      required:
+      - status
+    AiToken:
+      type: object
+      properties:
+        text:
+          type: string
+      additionalProperties: false
+      required:
+      - text
+    AiDone:
+      type: object
+      properties:
+        tokens_used:
+          type: integer
+        quota_remaining:
+          type:
+          - integer
+          - 'null'
+      additionalProperties: false
+    StreamError:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+      additionalProperties: false
+      required:
+      - title
+      - status
+  messages:
+    scoreboardUpdated:
+      name: scoreboard.updated
+      title: Scoreboard updated
+      summary: Current standings; private entrants appear as Anonymous
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: scoreboard.updated
+            payload:
+              $ref: '#/components/schemas/ScoreboardUpdate'
+      x-requirement:
+      - FR-CMP-009
+      - FR-CMP-005
+      - SEC-017
+      - SEC-069
+      - NFR-006
+    battleStateChanged:
+      name: battle.state
+      title: Battle state changed
+      summary: Lifecycle transition decided by the server
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: battle.state
+            payload:
+              $ref: '#/components/schemas/BattleState'
+      x-requirement:
+      - FR-CMP-008
+      - FR-CMP-009
+      - SEC-069
+    clockSync:
+      name: clock.sync
+      title: Clock sync
+      summary: Authoritative time and remaining duration
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: clock.sync
+            payload:
+              $ref: '#/components/schemas/ClockSync'
+      x-requirement:
+      - FR-CMP-009
+      - NFR-006
+    ownVerdict:
+      name: submission.verdict
+      title: Own submission verdict
+      summary: Delivered only to the submitter
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: submission.verdict
+            payload:
+              $ref: '#/components/schemas/OwnVerdict'
+      x-requirement:
+      - FR-EXE-005
+      - FR-CMP-003
+      - TM-CMP-007
+    battleSubscribe:
+      name: subscribe
+      title: Subscribe or resume
+      summary: First message after connect; authenticates and optionally resumes
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: subscribe
+            payload:
+              $ref: '#/components/schemas/Subscribe'
+      x-requirement:
+      - SEC-068
+    clockRequest:
+      name: clock.request
+      title: Clock request
+      summary: Client asks for a time sync
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: clock.request
+            payload:
+              $ref: '#/components/schemas/ClockRequest'
+      x-requirement:
+      - NFR-006
+    notificationCreated:
+      name: notification.created
+      title: Notification created
+      summary: New in-app notification
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: notification.created
+            payload:
+              $ref: '#/components/schemas/Notification'
+      x-requirement:
+      - FR-PLT-001
+      - NFR-010
+    notificationsRead:
+      name: notifications.read
+      title: Mark notifications read
+      summary: Client marks notifications as read
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: notifications.read
+            payload:
+              $ref: '#/components/schemas/NotificationsRead'
+      x-requirement:
+      - FR-PLT-001
+    notifSubscribe:
+      name: subscribe
+      title: Subscribe or resume
+      summary: Authenticates the stream and optionally resumes
+      contentType: application/json
+      payload:
+        allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - properties:
+            type:
+              const: subscribe
+            payload:
+              $ref: '#/components/schemas/Subscribe'
+      x-requirement:
+      - SEC-068
+    runOutput:
+      name: run.output
+      title: Run output chunk
+      summary: stdout or stderr chunk as it is produced
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RunOutput'
+      x-requirement:
+      - FR-EXE-001
+      - NFR-003
+      - SEC-050
+    runDone:
+      name: run.done
+      title: Run finished
+      summary: Final status of the run
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RunDone'
+      x-requirement:
+      - FR-EXE-001
+      - FR-EXE-003
+    aiToken:
+      name: ai.token
+      title: AI token chunk
+      summary: Streamed tutor text; rendered as text only
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AiToken'
+      x-requirement:
+      - FR-AI-001
+      - SEC-064
+      - NFR-008
+    aiDone:
+      name: ai.done
+      title: AI response finished
+      summary: Token usage and remaining quota
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AiDone'
+      x-requirement:
+      - FR-AI-003
+      - SEC-062
+    streamError:
+      name: error
+      title: Stream error
+      summary: Problem details for a failed stream, including quota or limit errors
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/StreamError'
+      x-requirement:
+      - FR-EXE-006
+      - FR-AI-003

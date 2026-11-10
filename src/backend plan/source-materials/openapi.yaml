@@ -1,0 +1,2822 @@
+openapi: 3.1.0
+info:
+  title: CodeFull Public API
+  version: 0.2.0
+  description: Contract for the CodeFull platform. Derived from SRS-001 and SEC-001. Realtime channels (battles, notifications, run streams) are
+    specified separately in AsyncAPI. Errors use RFC 9457 problem details. Every operation lists the requirements it satisfies in x-requirement.
+  license:
+    name: Proprietary
+servers:
+- url: https://api.codefull.dev/v1
+  description: Production
+- url: https://api.staging.codefull.dev/v1
+  description: Staging
+tags:
+- name: Identity
+- name: Learning
+- name: Execution
+- name: Competition
+- name: Rewards
+- name: Community
+- name: AI
+- name: Billing
+- name: Platform
+- name: Admin
+security:
+- oidc: []
+paths:
+  /me:
+    get:
+      operationId: getMe
+      summary: Current profile
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-004
+      - SEC-009
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateMe
+      summary: Update profile
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-004
+      - SEC-022
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAccount
+      summary: Delete account
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-007
+      - SEC-075
+      - SEC-004
+      x-release: MVP
+      responses:
+        '204':
+          description: No content
+        '202':
+          description: Deletion workflow started
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/summary:
+    get:
+      operationId: getDashboardSummary
+      summary: Dashboard summary
+      tags:
+      - Identity
+      x-requirement:
+      - FR-LRN-001
+      - FR-RWD-003
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/onboarding:
+    put:
+      operationId: saveOnboarding
+      summary: Save onboarding answers
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-003
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Onboarding'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/settings:
+    get:
+      operationId: getSettings
+      summary: Privacy settings
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-005
+      - SEC-017
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySettings'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateSettings
+      summary: Update privacy settings
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-005
+      - SEC-017
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacySettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySettings'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/export:
+    post:
+      operationId: requestExport
+      summary: Request data export
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-007
+      - SEC-075
+      x-release: MVP
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: No content
+        '202':
+          description: Export queued
+        default:
+          $ref: '#/components/responses/Problem'
+  /users/{handle}:
+    get:
+      operationId: getPublicProfile
+      summary: Public portfolio
+      tags:
+      - Identity
+      x-requirement:
+      - FR-IDN-008
+      - SEC-016
+      - SEC-017
+      x-release: FF
+      parameters:
+      - name: handle
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProfile'
+        default:
+          $ref: '#/components/responses/Problem'
+      security: []
+  /courses:
+    get:
+      operationId: listCourses
+      summary: List courses
+      tags:
+      - Learning
+      x-requirement:
+      - FR-LRN-002
+      x-release: MVP
+      parameters:
+      - &id001
+        $ref: '#/components/parameters/Cursor'
+      - &id002
+        $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoursePage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /courses/{courseId}:
+    get:
+      operationId: getCourse
+      summary: Course detail
+      tags:
+      - Learning
+      x-requirement:
+      - FR-LRN-002
+      - FR-LRN-003
+      x-release: MVP
+      parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        default:
+          $ref: '#/components/responses/Problem'
+  /courses/{courseId}/enroll:
+    post:
+      operationId: enrollCourse
+      summary: Enroll in course
+      tags:
+      - Learning
+      x-requirement:
+      - FR-LRN-002
+      x-release: MVP
+      parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+  /lessons/{lessonId}/progress:
+    put:
+      operationId: recordLessonProgress
+      summary: Record lesson progress
+      tags:
+      - Learning
+      x-requirement:
+      - FR-LRN-004
+      - FR-LRN-005
+      - SEC-021
+      x-release: MVP
+      parameters:
+      - name: lessonId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonProgressInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonProgress'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/progression:
+    get:
+      operationId: getProgression
+      summary: Tier progression and achievements
+      tags:
+      - Learning
+      x-requirement:
+      - FR-LRN-001
+      - FR-LRN-007
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progression'
+        default:
+          $ref: '#/components/responses/Problem'
+  /runs:
+    post:
+      operationId: createRun
+      summary: Run code in the playground
+      tags:
+      - Execution
+      x-requirement:
+      - FR-EXE-001
+      - FR-EXE-003
+      - FR-EXE-006
+      - FR-LRN-010
+      - SEC-040
+      x-release: MVP
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunRequest'
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '429':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+    get:
+      operationId: listRuns
+      summary: Run history
+      tags:
+      - Execution
+      x-requirement:
+      - FR-EXE-007
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /runs/{runId}:
+    get:
+      operationId: getRun
+      summary: Run result
+      tags:
+      - Execution
+      x-requirement:
+      - FR-EXE-001
+      - SEC-010
+      x-release: MVP
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        default:
+          $ref: '#/components/responses/Problem'
+  /runs/{runId}/stream:
+    get:
+      operationId: streamRun
+      summary: Stream run output (SSE)
+      tags:
+      - Execution
+      x-requirement:
+      - FR-EXE-001
+      - NFR-003
+      x-release: MVP
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/Problem'
+  /snippets:
+    post:
+      operationId: createSnippet
+      summary: Save and share a snippet
+      tags:
+      - Execution
+      x-requirement:
+      - FR-EXE-004
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnippetCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snippet'
+        default:
+          $ref: '#/components/responses/Problem'
+  /challenges:
+    get:
+      operationId: listChallenges
+      summary: List challenges
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-001
+      x-release: MVP
+      parameters:
+      - name: mode
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - solo
+          - multiplayer
+      - name: language
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: tier
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/Tier'
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengePage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createChallenge
+      summary: Create a challenge (moderated)
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-004
+      x-release: FF
+      x-roles:
+      - org_admin
+      - approved_creator
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChallengeCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Challenge'
+        default:
+          $ref: '#/components/responses/Problem'
+  /challenges/{challengeId}:
+    get:
+      operationId: getChallenge
+      summary: Challenge detail
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-001
+      x-release: MVP
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Challenge'
+        default:
+          $ref: '#/components/responses/Problem'
+  /challenges/{challengeId}/entries:
+    post:
+      operationId: enterChallenge
+      summary: Enter a challenge
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-002
+      - FR-CMP-005
+      - FR-EXE-006
+      x-release: MVP
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntryCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+        default:
+          $ref: '#/components/responses/Problem'
+  /entries/{entryId}/submissions:
+    post:
+      operationId: submitSolution
+      summary: Submit a solution
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-002
+      - FR-CMP-003
+      - FR-EXE-005
+      - SEC-047
+      x-release: MVP
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreate'
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        default:
+          $ref: '#/components/responses/Problem'
+  /submissions/{submissionId}:
+    get:
+      operationId: getSubmission
+      summary: Submission verdict
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-003
+      - SEC-010
+      x-release: MVP
+      parameters:
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        default:
+          $ref: '#/components/responses/Problem'
+  /leaderboards/{scope}:
+    get:
+      operationId: getLeaderboard
+      summary: Leaderboard by scope
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-006
+      - FR-CMP-007
+      - FR-RWD-012
+      - SEC-017
+      x-release: MVP
+      parameters:
+      - name: scope
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - global
+          - weekly
+          - language
+          - region
+          - friends
+          - org
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/rank:
+    get:
+      operationId: getMyRank
+      summary: My rank and nearest rivals
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-006
+      - FR-CMP-014
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyRank'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/leaderboard-visibility:
+    put:
+      operationId: setLeaderboardVisibility
+      summary: Show or hide my name
+      tags:
+      - Competition
+      x-requirement:
+      - FR-IDN-005
+      - FR-CMP-005
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisibilityUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySettings'
+        default:
+          $ref: '#/components/responses/Problem'
+  /battles/{battleId}:
+    get:
+      operationId: getBattle
+      summary: Battle info and websocket URL
+      tags:
+      - Competition
+      x-requirement:
+      - FR-CMP-008
+      - FR-CMP-009
+      - SEC-068
+      x-release: FF
+      parameters:
+      - name: battleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BattleInfo'
+        default:
+          $ref: '#/components/responses/Problem'
+  /rewards/balance:
+    get:
+      operationId: getBalance
+      summary: Points balance by bucket
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-003
+      - FR-RWD-011
+      - FR-RWD-012
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        default:
+          $ref: '#/components/responses/Problem'
+  /rewards/transactions:
+    get:
+      operationId: listTransactions
+      summary: Points transaction history
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-003
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /rewards/catalog:
+    get:
+      operationId: listCatalog
+      summary: Points catalog
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-010
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /rewards/catalog/{itemId}/purchase:
+    post:
+      operationId: purchaseCatalogItem
+      summary: Buy a catalog item with points
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-010
+      - FR-RWD-011
+      - SEC-052
+      - SEC-053
+      x-release: MVP
+      parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+        default:
+          $ref: '#/components/responses/Problem'
+  /me/unlocks:
+    get:
+      operationId: listUnlocks
+      summary: My unlocked items
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-010
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlockPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /pools:
+    get:
+      operationId: listPools
+      summary: Prize pools
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-004
+      x-release: FF
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /redemptions:
+    post:
+      operationId: createRedemption
+      summary: Redeem points
+      tags:
+      - Rewards
+      x-requirement:
+      - FR-RWD-006
+      - FR-RWD-007
+      - FR-RWD-008
+      - SEC-054
+      - SEC-056
+      - SEC-004
+      x-release: FF
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionCreate'
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+        default:
+          $ref: '#/components/responses/Problem'
+  /questions:
+    get:
+      operationId: listQuestions
+      summary: Community feed
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-001
+      - FR-COM-002
+      - SEC-018
+      x-release: MVP
+      parameters:
+      - name: tag
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - new
+          - top
+          - unanswered
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createQuestion
+      summary: Ask a question (open or discreet)
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-001
+      - FR-COM-002
+      - SEC-018
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        default:
+          $ref: '#/components/responses/Problem'
+  /questions/{questionId}/answers:
+    post:
+      operationId: createAnswer
+      summary: Answer a question
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-003
+      x-release: MVP
+      parameters:
+      - name: questionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+        default:
+          $ref: '#/components/responses/Problem'
+  /answers/{answerId}/accept:
+    post:
+      operationId: acceptAnswer
+      summary: Accept an answer
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-003
+      - FR-RWD-002
+      x-release: MVP
+      parameters:
+      - name: answerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+  /votes:
+    post:
+      operationId: castVote
+      summary: Vote on a question or answer
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-003
+      - FR-COM-004
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteCreate'
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+  /flags:
+    post:
+      operationId: createFlag
+      summary: Report content
+      tags:
+      - Community
+      x-requirement:
+      - FR-COM-007
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagCreate'
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+  /ai/sessions:
+    post:
+      operationId: createAiSession
+      summary: Start a tutor session
+      tags:
+      - AI
+      x-requirement:
+      - FR-AI-001
+      - FR-AI-004
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiSessionCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSession'
+        default:
+          $ref: '#/components/responses/Problem'
+    get:
+      operationId: listAiSessions
+      summary: List tutor sessions
+      tags:
+      - AI
+      x-requirement:
+      - FR-AI-001
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSessionPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /ai/sessions/{sessionId}/messages:
+    post:
+      operationId: sendAiMessage
+      summary: Send message (SSE stream)
+      tags:
+      - AI
+      x-requirement:
+      - FR-AI-001
+      - FR-AI-003
+      - FR-AI-004
+      - SEC-062
+      - SEC-063
+      - SEC-064
+      x-release: MVP
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiMessageRequest'
+      responses:
+        '200':
+          description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /billing/plan:
+    get:
+      operationId: getPlan
+      summary: Current plan
+      tags:
+      - Billing
+      x-requirement:
+      - FR-BIL-001
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        default:
+          $ref: '#/components/responses/Problem'
+  /billing/checkout:
+    post:
+      operationId: createCheckout
+      summary: Start Stripe Checkout
+      tags:
+      - Billing
+      x-requirement:
+      - FR-BIL-002
+      - SEC-057
+      x-release: MVP
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        default:
+          $ref: '#/components/responses/Problem'
+  /billing/usage:
+    get:
+      operationId: getUsage
+      summary: Usage meters
+      tags:
+      - Billing
+      x-requirement:
+      - FR-BIL-003
+      x-release: MVP
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /billing/invoices:
+    get:
+      operationId: listInvoices
+      summary: Invoices
+      tags:
+      - Billing
+      x-requirement:
+      - FR-BIL-004
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoicePage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: Notifications
+      tags:
+      - Platform
+      x-requirement:
+      - FR-PLT-001
+      x-release: MVP
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/read:
+    post:
+      operationId: markNotificationsRead
+      summary: Mark notifications read
+      tags:
+      - Platform
+      x-requirement:
+      - FR-PLT-001
+      x-release: MVP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRead'
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+  /search:
+    get:
+      operationId: search
+      summary: Global search
+      tags:
+      - Platform
+      x-requirement:
+      - FR-PLT-002
+      - SEC-017
+      x-release: MVP
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: types
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/flags:
+    get:
+      operationId: getFlags
+      summary: Feature flags
+      tags:
+      - Admin
+      x-requirement:
+      - FR-PLT-005
+      x-release: MVP
+      x-roles:
+      - admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlags'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: setFlags
+      summary: Update feature flags (dual control, audited)
+      tags:
+      - Admin
+      x-requirement:
+      - FR-PLT-005
+      - FR-PLT-006
+      - SEC-056
+      - SEC-103
+      x-release: MVP
+      x-roles:
+      - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlags'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlags'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/moderation/queue:
+    get:
+      operationId: listModerationQueue
+      summary: Moderation queue
+      tags:
+      - Admin
+      x-requirement:
+      - FR-PLT-004
+      - FR-CMP-013
+      x-release: MVP
+      x-roles:
+      - moderator
+      - admin
+      parameters:
+      - *id001
+      - *id002
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModerationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/moderation/{itemId}/resolve:
+    post:
+      operationId: resolveModerationItem
+      summary: Resolve a flag (audited)
+      tags:
+      - Admin
+      x-requirement:
+      - FR-PLT-004
+      - FR-PLT-006
+      - SEC-074
+      x-release: MVP
+      x-roles:
+      - moderator
+      - admin
+      parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerationResolution'
+      responses:
+        '204':
+          description: No content
+        default:
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    oidc:
+      type: openIdConnect
+      openIdConnectUrl: https://auth.codefull.dev/realms/codefull/.well-known/openid-configuration
+      description: OIDC with PKCE. Tokens are verified at the API gateway; services trust only gateway-signed internal headers.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 64
+      description: Required on operations whose retry could double an effect.
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque cursor from a previous page.
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+  responses:
+    Problem:
+      description: Error (RFC 9457 problem details)
+      headers:
+        RateLimit-Remaining:
+          schema:
+            type: integer
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        request_id:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            additionalProperties: false
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+    Tier:
+      type: string
+      enum:
+      - beginner
+      - intermediate
+      - advanced
+      - expert
+      - master
+      - guru
+    Language:
+      type: string
+      enum:
+      - python
+      - javascript
+      - go
+      - java
+      - cpp
+      - rust
+    Profile:
+      type: object
+      properties:
+        handle:
+          type: string
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 30
+        bio:
+          type: string
+          maxLength: 500
+        location:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        tier:
+          $ref: '#/components/schemas/Tier'
+        xp:
+          type: integer
+        member_since:
+          type: string
+          format: date
+      additionalProperties: false
+      required:
+      - handle
+      - display_name
+      - tier
+    ProfileUpdate:
+      type: object
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 30
+        bio:
+          type: string
+          maxLength: 500
+        location:
+          type: string
+          maxLength: 100
+        skills:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    PrivacySettings:
+      type: object
+      properties:
+        show_on_leaderboard:
+          type: boolean
+        allow_recruiter_contact:
+          type: boolean
+        public_challenge_history:
+          type: boolean
+        show_points_balance:
+          type: boolean
+      additionalProperties: false
+      required:
+      - show_on_leaderboard
+      - allow_recruiter_contact
+      - public_challenge_history
+      - show_points_balance
+    Onboarding:
+      type: object
+      properties:
+        experience_level:
+          type: string
+          enum:
+          - complete_beginner
+          - some_experience
+          - professional
+        primary_goal:
+          type: string
+          enum:
+          - first_job
+          - compete
+          - level_up
+          - fun
+        known_languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+        weekly_hours:
+          type: string
+          enum:
+          - 1-3
+          - 3-7
+          - 7-15
+          - 15+
+      additionalProperties: false
+      required:
+      - experience_level
+      - primary_goal
+      - weekly_hours
+    DashboardSummary:
+      type: object
+      properties:
+        tier:
+          $ref: '#/components/schemas/Tier'
+        xp_in_tier:
+          type: integer
+        xp_to_next:
+          type: integer
+        xp_total:
+          type: integer
+          description: Sum of XP across tiers
+        learning_points:
+          type: integer
+        prize_points:
+          type: integer
+        competition_score:
+          type: integer
+        reputation:
+          type: integer
+        streak_days:
+          type: integer
+        challenges_won:
+          type: integer
+        global_rank:
+          type:
+          - integer
+          - 'null'
+      additionalProperties: false
+    PublicProfile:
+      type: object
+      properties:
+        handle:
+          type: string
+        display_name:
+          type: string
+        tier:
+          $ref: '#/components/schemas/Tier'
+        skills:
+          type: array
+          items:
+            type: string
+        featured_solutions:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              language:
+                $ref: '#/components/schemas/Language'
+              stars:
+                type: integer
+            additionalProperties: false
+      additionalProperties: false
+      required:
+      - handle
+      - display_name
+    CourseSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        tier_range:
+          type: string
+        lessons:
+          type: integer
+        enrolled:
+          type: boolean
+        progress_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+      additionalProperties: false
+      required:
+      - id
+      - title
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              title:
+                type: string
+              lessons:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
+                    formats:
+                      type: array
+                      items:
+                        type: string
+                        enum:
+                        - video
+                        - audio
+                        - text
+                        - interactive
+                  additionalProperties: false
+            additionalProperties: false
+      additionalProperties: false
+      required:
+      - id
+      - title
+    LessonProgressInput:
+      type: object
+      properties:
+        format:
+          type: string
+          enum:
+          - video
+          - audio
+          - text
+          - interactive
+        position_seconds:
+          type: integer
+          minimum: 0
+        completed:
+          type: boolean
+      additionalProperties: false
+      required:
+      - format
+    LessonProgress:
+      type: object
+      properties:
+        lesson_id:
+          type: string
+          format: uuid
+        completed:
+          type: boolean
+        xp_awarded:
+          type: integer
+        tier_promoted:
+          type: boolean
+      additionalProperties: false
+    Progression:
+      type: object
+      properties:
+        current_tier:
+          $ref: '#/components/schemas/Tier'
+        xp_total:
+          type: integer
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              tier:
+                $ref: '#/components/schemas/Tier'
+              xp_required:
+                type: integer
+              xp_earned:
+                type: integer
+              status:
+                type: string
+                enum:
+                - completed
+                - in_progress
+                - locked
+            additionalProperties: false
+        achievements:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              rarity:
+                type: string
+                enum:
+                - common
+                - uncommon
+                - rare
+                - epic
+            additionalProperties: false
+      additionalProperties: false
+    RunRequest:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/Language'
+        source:
+          type: string
+          maxLength: 200000
+        stdin:
+          type: string
+          maxLength: 100000
+        context:
+          type: string
+          enum:
+          - playground
+          - lesson_exercise
+          default: playground
+          description: Lesson exercises are exempt from the Free plan execution quota and use their own rate limit (ECO-001 decision 7)
+        lesson_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+      additionalProperties: false
+      required:
+      - language
+      - source
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - error
+          - timeout
+        stdout:
+          type: string
+        stderr:
+          type: string
+        duration_ms:
+          type: integer
+        memory_kb:
+          type: integer
+      additionalProperties: false
+      required:
+      - id
+      - status
+    SnippetCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        language:
+          $ref: '#/components/schemas/Language'
+        source:
+          type: string
+          maxLength: 200000
+      additionalProperties: false
+      required:
+      - language
+      - source
+    Snippet:
+      type: object
+      properties:
+        id:
+          type: string
+        share_url:
+          type: string
+          format: uri
+      additionalProperties: false
+    ChallengeSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        mode:
+          type: string
+          enum:
+          - solo
+          - multiplayer
+        language:
+          type: string
+        tier:
+          $ref: '#/components/schemas/Tier'
+        status:
+          type: string
+          enum:
+          - upcoming
+          - open
+          - live
+          - closed
+        prize_points:
+          type: integer
+        entrants:
+          type: integer
+        closes_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - status
+    Challenge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        mode:
+          type: string
+          enum:
+          - solo
+          - multiplayer
+        language:
+          type: string
+        tier:
+          $ref: '#/components/schemas/Tier'
+        status:
+          type: string
+          enum:
+          - upcoming
+          - open
+          - live
+          - closed
+        prize_points:
+          type: integer
+        entrants:
+          type: integer
+        closes_at:
+          type: string
+          format: date-time
+        description:
+          type: string
+        time_limit_ms:
+          type: integer
+        memory_limit_mb:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - status
+    ChallengeCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        mode:
+          type: string
+          enum:
+          - solo
+          - multiplayer
+        tier:
+          $ref: '#/components/schemas/Tier'
+        initial_prize_points:
+          type: integer
+          minimum: 0
+        prize_cap_points:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+      required:
+      - title
+      - description
+      - mode
+      - tier
+    EntryCreate:
+      type: object
+      properties:
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+      additionalProperties: false
+      required:
+      - visibility
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        challenge_id:
+          type: string
+          format: uuid
+        visibility:
+          type: string
+          enum:
+          - public
+          - private
+        status:
+          type: string
+      additionalProperties: false
+    SubmissionCreate:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/Language'
+        source:
+          type: string
+          maxLength: 200000
+      additionalProperties: false
+      required:
+      - language
+      - source
+    Submission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - judged
+          - error
+          - timeout
+        verdict:
+          type:
+          - string
+          - 'null'
+          enum:
+          - passed
+          - failed
+          - partial
+          - null
+        passed_cases:
+          type: integer
+        total_cases:
+          type: integer
+        points_awarded:
+          type: integer
+      additionalProperties: false
+      required:
+      - id
+      - status
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        display_name:
+          type: string
+          description: Anonymous for private entries
+        anonymous:
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+        competition_score:
+          type: integer
+          description: 'Lifetime points earned from challenges, battles, and tournaments (weekly boards: last 7 days)'
+        wins:
+          type: integer
+        losses:
+          type: integer
+        rank_change:
+          type: integer
+      additionalProperties: false
+      required:
+      - rank
+      - competition_score
+    Leaderboard:
+      type: object
+      properties:
+        scope:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - scope
+      - entries
+    MyRank:
+      type: object
+      properties:
+        rank:
+          type: integer
+        rank_change_week:
+          type: integer
+        neighbors:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+      additionalProperties: false
+    VisibilityUpdate:
+      type: object
+      properties:
+        show_name:
+          type: boolean
+      additionalProperties: false
+      required:
+      - show_name
+    Balance:
+      type: object
+      properties:
+        learning_points:
+          type: integer
+          description: In-app use only
+        prize_points:
+          type: integer
+          description: Eligible for redemption when Phase 2 opens
+        total_points:
+          type: integer
+        lifetime_earned:
+          type: integer
+        competition_score:
+          type: integer
+        notional_value_usd:
+          type: number
+      additionalProperties: false
+      required:
+      - learning_points
+      - prize_points
+      - total_points
+    LedgerTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        amount:
+          type: integer
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - amount
+    RedemptionCreate:
+      type: object
+      properties:
+        option:
+          type: string
+          enum:
+          - pro_month
+          - course_voucher
+          - gift_card
+          - paypal_cash
+        points:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+      required:
+      - option
+      - points
+    Redemption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - requested
+          - held
+          - approved
+          - rejected
+          - review
+          - fulfilled
+          - refunded
+      additionalProperties: false
+    CatalogItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - cosmetic
+          - pack
+          - streak_freeze
+        price_points:
+          type: integer
+        owned:
+          type: boolean
+        available:
+          type: boolean
+      additionalProperties: false
+      required:
+      - id
+      - code
+      - name
+      - kind
+      - price_points
+    CatalogPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        points_spent:
+          type: integer
+        from_learning:
+          type: integer
+        from_prize:
+          type: integer
+        unlocked_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - item_id
+      - points_spent
+    Unlock:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        unlocked_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    UnlockPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unlock'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    Pool:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        challenge_id:
+          type: string
+          format: uuid
+        current_points:
+          type: integer
+        cap_points:
+          type: integer
+        contributors:
+          type: integer
+      additionalProperties: false
+    QuestionCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+          maxLength: 10000
+        tags:
+          type: array
+          items:
+            type: string
+        mode:
+          type: string
+          enum:
+          - open
+          - discreet
+      additionalProperties: false
+      required:
+      - title
+      - body
+      - mode
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        mode:
+          type: string
+          enum:
+          - open
+          - discreet
+        tags:
+          type: array
+          items:
+            type: string
+        author:
+          type: string
+        votes:
+          type: integer
+        answer_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - title
+    AnswerCreate:
+      type: object
+      properties:
+        body:
+          type: string
+          maxLength: 10000
+      additionalProperties: false
+      required:
+      - body
+    Answer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        body:
+          type: string
+        author:
+          type: string
+        accepted:
+          type: boolean
+        votes:
+          type: integer
+      additionalProperties: false
+    VoteCreate:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum:
+          - question
+          - answer
+        target_id:
+          type: string
+          format: uuid
+        value:
+          type: integer
+          enum:
+          - -1
+          - 1
+      additionalProperties: false
+      required:
+      - target_type
+      - target_id
+      - value
+    FlagCreate:
+      type: object
+      properties:
+        target_type:
+          type: string
+        target_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 500
+      additionalProperties: false
+      required:
+      - target_type
+      - target_id
+      - reason
+    AiSessionCreate:
+      type: object
+      properties:
+        topic:
+          type: string
+        lesson_id:
+          type: string
+          format: uuid
+        challenge_id:
+          type: string
+          format: uuid
+          description: When set, tutor runs in challenge mode (hints only)
+      additionalProperties: false
+    AiSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topic:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    AiMessageRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          maxLength: 8000
+        code:
+          type: string
+          maxLength: 100000
+      additionalProperties: false
+      required:
+      - text
+    Plan:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum:
+          - free
+          - starter
+          - pro
+          - enterprise
+        renews_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        price_usd_month:
+          type: number
+      additionalProperties: false
+    CheckoutRequest:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum:
+          - starter
+          - pro
+        success_url:
+          type: string
+          format: uri
+        cancel_url:
+          type: string
+          format: uri
+      additionalProperties: false
+      required:
+      - plan
+    CheckoutSession:
+      type: object
+      properties:
+        checkout_url:
+          type: string
+          format: uri
+      additionalProperties: false
+    Usage:
+      type: object
+      properties:
+        ai_tokens_used:
+          type: integer
+        ai_tokens_limit:
+          type:
+          - integer
+          - 'null'
+        executions_used:
+          type: integer
+        executions_limit:
+          type:
+          - integer
+          - 'null'
+        challenge_entries_used:
+          type: integer
+        challenge_entries_limit:
+          type:
+          - integer
+          - 'null'
+      additionalProperties: false
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        plan:
+          type: string
+        amount_usd:
+          type: number
+        status:
+          type: string
+        pdf_url:
+          type: string
+          format: uri
+      additionalProperties: false
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    NotificationRead:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        all:
+          type: boolean
+      additionalProperties: false
+    SearchResults:
+      type: object
+      properties:
+        challenges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeSummary'
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseSummary'
+        coders:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProfile'
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+      additionalProperties: false
+    FeatureFlags:
+      type: object
+      properties:
+        ai_features:
+          type: boolean
+        real_money_track:
+          type: boolean
+        registrations_open:
+          type: boolean
+        maintenance_mode:
+          type: boolean
+      additionalProperties: false
+    ModerationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        summary:
+          type: string
+        reported_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: false
+    ModerationResolution:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - dismiss
+          - remove
+          - warn
+          - suspend
+        reason:
+          type: string
+          maxLength: 500
+      additionalProperties: false
+      required:
+      - decision
+      - reason
+    BattleInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - lobby_open
+          - live
+          - closing
+          - settled
+          - cancelled
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        websocket_url:
+          type: string
+          format: uri
+      additionalProperties: false
+    ChallengePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    CoursePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseSummary'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    TransactionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerTransaction'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    QuestionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    NotificationPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    InvoicePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    PoolPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pool'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    AiSessionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AiSession'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    ModerationPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModerationItem'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items
+    RunPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+      additionalProperties: false
+      required:
+      - items

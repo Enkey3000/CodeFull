@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed CodeFull architecture</title>
+  <desc id="desc">Proposed learner clients connect through a protected API to domain services and data stores. A dedicated execution gateway separates program-run requests from isolated, disposable job environments.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2878c8"/></marker>
+    <style>
+      .bg{fill:#f4f8fd}.box{fill:#fff;stroke:#9cc8f4;stroke-width:2;rx:14}
+      .core{fill:#e9f4ff;stroke:#1674c7;stroke-width:2;rx:14}
+      .trust{fill:#fff4ea;stroke:#de873c;stroke-width:2;rx:14}
+      .title{font:700 25px Arial,sans-serif;fill:#12345a}.h{font:700 16px Arial,sans-serif;fill:#12345a}
+      .t{font:13px Arial,sans-serif;fill:#35516f}.small{font:12px Arial,sans-serif;fill:#536b84}
+      .line{stroke:#2878c8;stroke-width:2;fill:none;marker-end:url(#arrow)}
+      .dashed{stroke:#d18138;stroke-width:2;stroke-dasharray:6 5;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="720"/>
+  <text class="title" x="42" y="46">CodeFull | Proposed target architecture</text>
+  <text class="small" x="42" y="70">Planning view only — no production services or sandbox are included in this package.</text>
+  <rect class="box" x="40" y="130" width="200" height="170"/>
+  <text class="h" x="62" y="162">Client surfaces</text>
+  <text class="t" x="62" y="192">Web (MVP proposal)</text>
+  <text class="t" x="62" y="220">Desktop / mobile (later)</text>
+  <text class="t" x="62" y="248">Practice and course UI</text>
+  <text class="small" x="62" y="278">Current artifact: static HTML</text>
+  <rect class="core" x="300" y="145" width="195" height="140"/>
+  <text class="h" x="322" y="178">Edge and API</text>
+  <text class="t" x="322" y="208">Identity · limits</text>
+  <text class="t" x="322" y="235">Privacy · validation</text>
+  <text class="small" x="322" y="263">Proposed contract boundary</text>
+  <rect class="core" x="555" y="110" width="245" height="215"/>
+  <text class="h" x="578" y="144">Domain services</text>
+  <text class="t" x="578" y="176">Identity · learning</text>
+  <text class="t" x="578" y="203">Challenges · rewards</text>
+  <text class="t" x="578" y="230">Community · billing</text>
+  <text class="t" x="578" y="257">Events · notifications</text>
+  <text class="small" x="578" y="293">Proposed, not deployed</text>
+  <rect class="box" x="865" y="105" width="285" height="100"/>
+  <text class="h" x="888" y="139">PostgreSQL</text>
+  <text class="t" x="888" y="170">Tenant data · progress · ledger</text>
+  <rect class="box" x="865" y="235" width="285" height="100"/>
+  <text class="h" x="888" y="269">Events and workflows</text>
+  <text class="t" x="888" y="300">Queues · notifications · analytics</text>
+  <rect class="core" x="300" y="395" width="250" height="125"/>
+  <text class="h" x="323" y="430">Execution Gateway</text>
+  <text class="t" x="323" y="461">Validate and broker run jobs</text>
+  <text class="small" x="323" y="490">Sole proposed route to runners</text>
+  <rect class="trust" x="635" y="375" width="290" height="165"/>
+  <text class="h" x="658" y="409">Isolated run environment</text>
+  <text class="t" x="658" y="441">Per-job resource boundaries</text>
+  <text class="t" x="658" y="468">No network or shared state</text>
+  <text class="t" x="658" y="495">Dispose after job completion</text>
+  <text class="small" x="658" y="521">Requires independent validation</text>
+  <rect class="box" x="985" y="395" width="165" height="145"/>
+  <text class="h" x="1007" y="430">Providers</text>
+  <text class="t" x="1007" y="460">OIDC · billing</text>
+  <text class="t" x="1007" y="487">AI · media · email</text>
+  <text class="small" x="1007" y="517">Proposed adapters</text>
+  <rect class="box" x="300" y="590" width="850" height="75"/>
+  <text class="h" x="325" y="622">Cross-cutting controls</text>
+  <text class="t" x="325" y="646">Tenant authorization · privacy · audit · secrets · monitoring · backup / recovery · policy review</text>
+  <path class="line" d="M240 210 H300"/><path class="line" d="M495 210 H555"/>
+  <path class="line" d="M800 168 H865"/><path class="line" d="M800 262 H865"/>
+  <path class="line" d="M397 285 V395"/>
+  <path class="dashed" d="M550 455 H635"/>
+  <path class="line" d="M925 455 H985"/>
+  <path class="line" d="M678 375 C700 345 738 337 768 325"/>
+  <text class="small" x="558" y="447">bounded job request</text>
+  <text class="small" x="936" y="440">results/events</text>
+</svg>

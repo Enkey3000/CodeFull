@@ -1,0 +1,24 @@
+# MkDocs
+site/
+.venv/
+__pycache__/
+*.py[cod]
+
+# JavaScript / app builds
+node_modules/
+dist/
+build/
+.turbo/
+
+# Local data and secrets
+.env
+.env.*
+!.env.example
+*.sqlite
+*.db
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,16 @@
+site_name: CodeFull
+site_description: Product, architecture, and delivery documentation for CodeFull
+docs_dir: docs
+site_dir: site
+strict: true
+
+theme:
+  name: mkdocs
+
+nav:
+  - Overview: index.md
+  - Product spec: product-spec.md
+  - Architecture: architecture.md
+  - API design: api-design.md
+  - Data model: data-model.md
+  - Lessons learned: lessons-learned.md
